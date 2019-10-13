@@ -2,4 +2,5 @@ imutils
 opencv-python
 numpy
 pytesseract
+python-Levenshtein
 fuzzywuzzy
