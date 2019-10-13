@@ -1,0 +1,5 @@
+imutils
+opencv-python
+numpy
+pytesseract
+fuzzywuzzy
