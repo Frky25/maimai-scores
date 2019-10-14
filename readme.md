@@ -20,10 +20,10 @@ TODO: point to OpenCV installation details
 
 ## Proccess Images
 The main function for processing is processImg. It takes in an image as an array (e.g. from cv2.imread) and returns a python dictionary with the extracted data. It also takes an optional argument (imshow) with a list of strings for displaying some partially processed images for debugging purposes. The valid imshow strings are:
--`'ref_points'`: Show the detected reference points and the screen bounding circle. These are used to determine the cropping for detecting other features
--`'num_edges'`: Show the edge only version of the score, used for matching
--`'num_detect'`: Show the detected numbers and their locations. Number value corresponds with resistor color codes
--`'title_processed'`: Show the fully processed versions of the title. This is what is fed into OCR
+- `'ref_points'`: Show the detected reference points and the screen bounding circle. These are used to determine the cropping for detecting other features
+- `'num_edges'`: Show the edge only version of the score, used for matching
+- `'num_detect'`: Show the detected numbers and their locations. Number value corresponds with resistor color codes
+- `'title_processed'`: Show the fully processed versions of the title. This is what is fed into OCR
 
 So an example call might be:
 ```python
@@ -35,12 +35,12 @@ Results screen images to be processed by this should contain the entire screen (
 TODO: Add example images
 ### Result fields
 The returned result contains the following fields:
--`'score'`: The score, as an integer. Your actual percent score is `score/100`.
--`'titles'`: A list of predicted titles, from most to least likely. Each title is given as a tuple of `(name, id, confidence)`.
+- `'score'`: The score, as an integer. Your actual percent score is `score/100`.
+- `'titles'`: A list of predicted titles, from most to least likely. Each title is given as a tuple of `(name, id, confidence)`.
 
 ## Tesing utilities
 There are some utility functions in testMaimai.py that are useful for local testing and debugging.
-`testFile` takes a file name in as a string + an optional imshow argument. It processes the file and prints the results.
-`testAll` takes a directory name in as a string + an optional imshow argument. It processes all of the files in that folder, printing the file name and results for each of them.
+- `testFile` takes a file name in as a string + an optional imshow argument. It processes the file and prints the results.
+- `testAll` takes a directory name in as a string + an optional imshow argument. It processes all of the files in that folder, printing the file name and results for each of them.
 
 
