@@ -34,6 +34,7 @@ def largest_component(image):
     return img2
 
 def find_digits(image,imshows=[]):
+    print("score shape: " + str(image.shape))
     #refrence digit height and width
     dW = 48
     dH = 67
@@ -46,6 +47,7 @@ def find_digits(image,imshows=[]):
     maxs = 0
     for scale in np.linspace(s1, s2, 100)[::-1]:
         edges = cv2.Canny(cv2.resize(image,None,fx=scale,fy=scale),300,500)
+        print("scale: " + str(scale) + " scaled size: " + str(edges.shape))
         for d in range(0,10):
             digit = cv2.imread('digits/'+str(d)+'.png',0)
             res = cv2.matchTemplate(edges,digit,cv2.TM_CCOEFF_NORMED)
@@ -219,7 +221,31 @@ def read_title(image,imshows=[]):
         res[i] = (resUns[0][order[i]],resUns[1][order[i]],resUns[2][order[i]])
     return res
 
+def find_difficulty(image,imshows=[]):
+    image = cv2.resize(image,None,fx = 100.0/image.shape[1],fy= 100.0/image.shape[1])
+    cv2.imshow('image ' + str(np.random.randint(0,10000)), image)
+    meanColor = np.average(image,axis=(0,1))
+    difficultyColors = {
+        'Easy':(150,50,50),
+        'Basic':(50,150,50),
+        'Advanced':(50,150,200),
+        'Expert':(50,50,150),
+        'Master':(150,50,150),
+        'Re:Master':(180,120,180)
+        }
+    minDist = 1000000
+    minColor = ''
+    for color in difficultyColors:
+        val = difficultyColors[color]
+        dist = np.linalg.norm([val[0]-meanColor[0],val[1]-meanColor[1],val[2]-meanColor[2]])
+        if dist<minDist:
+            minColor = color
+            minDist = dist
+            
+    return minColor
+
 def processImg(image,imshows=[]):
+    print("original: " + str(image.shape))
     results = {}
     
 ################### Score Detection ###################
@@ -268,7 +294,9 @@ def processImg(image,imshows=[]):
     #find the center of mass of the title mask
     M = cv2.moments(title_mask)
     MX = int(M["m10"] / M["m00"])
-    MY = int(M["m01"] / M["m00"])    
+    MY = int(M["m01"] / M["m00"])
+
+    print("coords: " + str(cx)+ ' ' + str(cy) + ' ' + str(MX) + ' ' + str(MY))
     cv2.circle(scaled_img, (MX, MY), 4, (255, 255, 255), -1)
     if "ref_points" in imshows:
         cv2.imshow('detected circles',scaled_img)
@@ -291,14 +319,24 @@ def processImg(image,imshows=[]):
     title_mask = np.uint8(title_mask)
     title_masked = cv2.bitwise_and(image,image,mask=title_mask)
     rect = cv2.boundingRect(title_mask)
+    #correction for songs on expert
+    if float(rect[3])/rect[2]>0.25:
+        rect = (rect[0],int(rect[1]+rect[3]/2),rect[2],int(rect[3]/2))
+
     title_masked = title_masked[rect[1]:(rect[1]+rect[3]), rect[0]:(rect[0]+rect[2])]
     
-    if title_masked.shape[0]/title_masked.shape[1]>.25:
-        #correction for songs on expert
-        title_masked = title_masked[int(title_masked.shape[0]/2):title_masked.shape[0]]
     #crop in to remove bright stars from corners
     title_masked = title_masked[:,int(title_masked.shape[1]*.1):int(title_masked.shape[1]*.9)]
 
     results['titles'] = read_title(title_masked,imshows)
 
+################### Difficulty Detection ###################
+    #start from the title bounding rectangle and adjust
+    #to contain only the center of the difficulty star
+    diffXmin = int(rect[0]+.45*rect[2])
+    diffXmax = int(rect[0]+.55*rect[2])
+    diffYmin = int(rect[1]-0.5*rect[3])
+    diffYmax = int(rect[1])
+    difficulty = image[diffYmin:diffYmax,diffXmin:diffXmax]
+    results['difficulty'] = find_difficulty(difficulty,imshows)
     return results
