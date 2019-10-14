@@ -33,6 +33,10 @@ result = processImg(image,imshow=['ref_points','title_processed'])
 ### Image format
 Results screen images to be processed by this should contain the entire screen (the circle of the screen is used for a refrence point), and they should be fairly head-on (no perspective correction is done).
 TODO: Add example images
+### Result fields
+The returned result contains the following fields:
+-`'score'`: The score, as an integer. Your actual percent score is `score/100`.
+-`'titles'`: A list of predicted titles, from most to least likely. Each title is given as a tuple of `(name, id, confidence)`.
 
 ## Tesing utilities
 There are some utility functions in testMaimai.py that are useful for local testing and debugging.
