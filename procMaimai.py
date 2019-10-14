@@ -50,6 +50,7 @@ def find_digits(image,imshows=[]):
         print("scale: " + str(scale) + " scaled size: " + str(edges.shape))
         for d in range(0,10):
             digit = cv2.imread('digits/'+str(d)+'.png',0)
+            print("Digit size: " + str(digit.shape))
             res = cv2.matchTemplate(edges,digit,cv2.TM_CCOEFF_NORMED)
             if np.amax(res)>maxth:
                 maxth = np.amax(res)
