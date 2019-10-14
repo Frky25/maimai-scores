@@ -276,9 +276,9 @@ def processImg(image,imshows=[]):
     #using the title mask and circle center, crop out the score
     yDist = cy-MY
     scoreYMin = int((cy - yDist*1/2)*1/factor)
-    scoreYMax = int((cy + yDist*1/2)*1/factor)
+    scoreYMax = int((cy + yDist)*1/factor)
     scoreXMin = int((cx - yDist*1.25)*1/factor)
-    scoreXMax = int((cx + yDist*1.5)*1/factor)
+    scoreXMax = int((cx + yDist*1.75)*1/factor)
     score = image[scoreYMin:scoreYMax,scoreXMin:scoreXMax,:]
     #process the score
     results['score'] = find_digits(score,imshows)
