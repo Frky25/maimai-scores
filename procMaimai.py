@@ -34,7 +34,6 @@ def largest_component(image):
     return img2
 
 def find_digits(image,imshows=[]):
-    print("score shape: " + str(image.shape))
     #refrence digit height and width
     dW = 48
     dH = 67
@@ -47,10 +46,8 @@ def find_digits(image,imshows=[]):
     maxs = 0
     for scale in np.linspace(s1, s2, 100)[::-1]:
         edges = cv2.Canny(cv2.resize(image,None,fx=scale,fy=scale),300,500)
-        print("scale: " + str(scale) + " scaled size: " + str(edges.shape))
         for d in range(0,10):
             digit = cv2.imread('digits/'+str(d)+'.png',0)
-            print("Digit size: " + str(digit.shape))
             res = cv2.matchTemplate(edges,digit,cv2.TM_CCOEFF_NORMED)
             if np.amax(res)>maxth:
                 maxth = np.amax(res)
@@ -224,7 +221,8 @@ def read_title(image,imshows=[]):
 
 def find_difficulty(image,imshows=[]):
     image = cv2.resize(image,None,fx = 100.0/image.shape[1],fy= 100.0/image.shape[1])
-    cv2.imshow('image ' + str(np.random.randint(0,10000)), image)
+    if 'diff_crop' in imshows:
+        cv2.imshow('difficulty crop', image)
     meanColor = np.average(image,axis=(0,1))
     difficultyColors = {
         'Easy':(150,50,50),
@@ -246,7 +244,6 @@ def find_difficulty(image,imshows=[]):
     return minColor
 
 def processImg(image,imshows=[]):
-    print("original: " + str(image.shape))
     results = {}
     
 ################### Score Detection ###################
@@ -296,10 +293,10 @@ def processImg(image,imshows=[]):
     M = cv2.moments(title_mask)
     MX = int(M["m10"] / M["m00"])
     MY = int(M["m01"] / M["m00"])
-
-    print("coords: " + str(cx)+ ' ' + str(cy) + ' ' + str(MX) + ' ' + str(MY))
+    
     cv2.circle(scaled_img, (MX, MY), 4, (255, 255, 255), -1)
     if "ref_points" in imshows:
+        print("coords: " + str(cx)+ ' ' + str(cy) + ' ' + str(MX) + ' ' + str(MY))
         cv2.imshow('detected circles',scaled_img)
 
     #using the title mask and circle center, crop out the score

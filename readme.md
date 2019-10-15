@@ -24,6 +24,7 @@ The main function for processing is processImg. It takes in an image as an array
 - `'num_edges'`: Show the edge only version of the score, used for matching
 - `'num_detect'`: Show the detected numbers and their locations. Number value corresponds with resistor color codes
 - `'title_processed'`: Show the fully processed versions of the title. This is what is fed into OCR
+- `'diff_crop'`: Show the small cropped region used for reading the difficulty level
 
 So an example call might be:
 ```python
@@ -37,6 +38,7 @@ TODO: Add example images
 The returned result contains the following fields:
 - `'score'`: The score, as an integer. Your actual percent score is `score/100`.
 - `'titles'`: A list of predicted titles, from most to least likely. Each title is given as a tuple of `(name, id, confidence)`.
+- `'difficulty'`: The difficulty, as a string. Will always be one of the standard 6 difficulties.
 
 ## Tesing utilities
 There are some utility functions in testMaimai.py that are useful for local testing and debugging.
