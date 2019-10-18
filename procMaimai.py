@@ -36,43 +36,76 @@ def largest_component(image):
 def find_digits(image,imshows=[]):
     #refrence digit height and width
     dW = 48
-    dH = 67
+    dH = 64
     #range of scales to check for best match
-    s1 = float(dH)/image.shape[0]
-    s2 = s1*2.0
-
+    s1 = 1.1*float(dH)/image.shape[0]
+    s2 = s1*3.0
+    #dilation kernel
+    k = np.ones((3,3))
+    #generate digit kernels
+    dk = {}
+    for d in range(0,10):
+        digit = cv2.imread('digits/'+str(d)+'.png',0)
+        digit = cv2.dilate(digit, k)
+        ker = np.zeros(digit.shape)
+        num_ones = cv2.countNonZero(digit)
+        num_zeros = digit.size-num_ones
+        for x in range(0,digit.shape[1]):
+            for y in range(0,digit.shape[0]):
+                if digit[y,x] > 0:
+                    ker[y,x] = 1/num_ones
+                else:
+                    ker[y,x] = -1/num_zeros
+        dk[d] = ker
+        
     #attempt to match all digits at all scale
+    maxval = 0
     maxth = 0
     maxs = 0
-    for scale in np.linspace(s1, s2, 100)[::-1]:
-        edges = cv2.Canny(cv2.resize(image,None,fx=scale,fy=scale),300,500)
-        for d in range(0,10):
-            digit = cv2.imread('digits/'+str(d)+'.png',0)
-            res = cv2.matchTemplate(edges,digit,cv2.TM_CCOEFF_NORMED)
-            if np.amax(res)>maxth:
-                maxth = np.amax(res)
-                maxs = scale
+    for scale in np.linspace(s1, s2, 20)[::-1]:
+        resize = cv2.resize(image,None,fx=scale,fy=scale)
+        for th in [300,400,500]:
+            edges = cv2.Canny(resize,th,th+100)
+            edges = cv2.dilate(edges, k)
+            for d in range(0,10):
+                #digit = cv2.imread('digits/'+str(d)+'.png',0)
+                #digit = cv2.dilate(digit, k)
+                #res = cv2.matchTemplate(edges,digit,cv2.TM_CCOEFF_NORMED)
+                res = cv2.filter2D(edges,-1,dk[d],anchor=(0,0))
+                res = res[0:edges.shape[0]-dk[d].shape[0],0:edges.shape[1]-dk[d].shape[1]]
+                if np.amax(res)>maxval:
+                    maxval = np.amax(res)
+                    maxth = th
+                    maxs = scale
     #take the scale of the best match found
     image = cv2.resize(image,None,fx=maxs,fy=maxs)
-    edges = cv2.Canny(image,250,400)
+    edges = cv2.Canny(image,maxth,maxth+100)
+    edges = cv2.dilate(edges, k)
+
+    print(maxval)
+    
     if "num_edges" in imshows:
-        cv2.imshow('edges',edges)
+        cv2.imshow('edges'+str(np.random.randint(0,1000)),edges)
     #result saved in the form (x,y),res,num for up to 5 digits
     results = [[(0,0),(0,0),(0,0),(0,0),(0,0)],[0.,0.,0.,0.,0.],[-1,-1,-1,-1,-1]]
 
     #check each digit for matches
     for d in range(0,10):
-        digit = cv2.imread('digits/'+str(d)+'.png',0)
-        res = cv2.matchTemplate(edges,digit,cv2.TM_CCOEFF_NORMED)
-        threshold = 0.20
+        #digit = cv2.imread('digits/'+str(d)+'.png',0)
+        #digit = cv2.dilate(digit, k)
+        #res = cv2.matchTemplate(edges,digit,cv2.TM_CCOEFF_NORMED)
+        res = cv2.filter2D(edges,-1,dk[d],anchor=(0,0))
+        res = res[0:edges.shape[0]-dk[d].shape[0],0:edges.shape[1]-dk[d].shape[1]]
+        threshold = maxval/3
         loc = np.where( res >= threshold)
         for pt in zip(*loc[::-1]):
             placed = False
             #check for overlapping and pick the better match
             for i in range(0,5): 
                 rpt = results[0][i]
-                if np.linalg.norm([pt[0]-rpt[0],pt[1]-rpt[1]])<30:
+                if abs(pt[0]-rpt[0])<30 and not placed:
                     placed = True
+                    #print(str(d)+" placed at index "+str(i))
                     if res[pt[1],pt[0]]>results[1][i]:
                         results[0][i] = pt
                         results[1][i] = res[pt[1],pt[0]]
@@ -85,6 +118,25 @@ def find_digits(image,imshows=[]):
                     results[0][minRes] = pt
                     results[1][minRes] = res[pt[1],pt[0]]
                     results[2][minRes] = d
+
+    
+    #order the digits
+    xcoords = np.array(results[0])[:,0]
+    order = np.argsort(xcoords)
+    result = ''
+
+    for i in range(0,5):
+        if results[2][order[i]] != -1:
+            result += str(results[2][order[i]])
+    if int(result)>11000: #impossible score remove lowest confidence digit
+        result =  ''
+        ignore = np.argmin(results[1])
+        print(ignore)
+        for i in range(0,5):
+            if order[i] != ignore:
+                result += str(results[2][order[i]])
+            else:
+                results[2][order[i]] = -1
 
     if "num_detect" in imshows:
         #based on resistor color codes
@@ -103,22 +155,9 @@ def find_digits(image,imshows=[]):
                 cv2.rectangle(image,
                           results[0][i],(results[0][i][0]+48,results[0][i][1]+67),
                           colors[results[2][i]],2)
-        cv2.imshow('digits',image)
-
-    #order the digits
-    xcoords = np.array(results[0])[:,0]
-    order = np.argsort(xcoords)
-    digits = np.array(results[2])[order]
-    if digits[1]>0:
-        #can only be a 4 digit score
-        digits = digits[1:]
-    if -1 in digits:
-        print("Score improperly detected")
-        return 0
-
-    result = ''
-    for d in digits:
-        result = result+str(d)
+        cv2.imshow('digits'+str(np.random.randint(0,1000)),image)
+        print(results)
+                
     result = int(result)
         
     return result
